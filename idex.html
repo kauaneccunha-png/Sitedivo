@@ -1,1 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Almoxarifado - Redes Industriais</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ================= Paleta Industrial & Variáveis ================= */
+        :root {
+            --bg-color: #1a1a1d; /* Cinza muito escuro */
+            --panel-bg: #2d2d34; /* Cinza painel elétrico */
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --orange-safety: #ff6b00; /* Laranja de segurança */
+            --blue-tech: #00a8ff; /* Azul automação */
+            --green-ok: #4cd137;
+        }
 
+        /* ================= Reset e Tipografia ================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding-bottom: 2rem; }
+        h1, h2, h3 { font-weight: 600; }
+        
+        /* ================= Cabeçalho ================= */
+        header { background-color: var(--panel-bg); padding: 1.5rem; text-align: center; border-bottom: 4px solid var(--orange-safety); box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 2rem; }
+        header h1 { font-size: 1.8rem; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 5px; }
+
+        /* ================= Layout Principal ================= */
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 1rem; }
+        .section-title { font-size: 1.5rem; margin-bottom: 1rem; color: var(--blue-tech); border-bottom: 1px solid #444; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 10px; }
+
+        /* ================= Parte 1: Cabos (Grid de Cards) ================= */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        .card { background-color: var(--panel-bg); border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-left: 5px solid var(--orange-safety); position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.4); }
+        .card i { font-size: 3rem; color: var(--text-main); margin-bottom: 1rem; transition: color 0.3s; }
+        .card:hover i { color: var(--orange-safety); }
+        .card h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
+        
+        /* Modal de Informação (Oculto por padrão) */
+        .info-content { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #444; font-size: 0.95rem; text-align: left; animation: fadeIn 0.4s ease; color: var(--text-main); }
+        .card.active .info-content { display: block; }
+        .card.active { border-left-color: var(--blue-tech); }
+        .card.active i { color: var(--blue-tech); }
+
+        /* ================= Parte 2: Topologias ================= */
+        .topology-controls { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .btn { flex: 1; min-width: 200px; background-color: var(--panel-bg); color: var(--text-main); border: 2px solid #555; padding: 1rem; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn:hover { background-color: #3f3f4a; border-color: var(--blue-tech); }
+        .btn.active { background-color: var(--blue-tech); border-color: var(--blue-tech); color: #fff; }
+
+        .simulation-area { background-color: var(--panel-bg); border-radius: 8px; padding: 2rem; border: 1px dashed #666; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .sim-text { font-size: 1.1rem; max-width: 600px; margin-bottom: 2rem; color: var(--text-main); min-height: 50px; }
+        
+        /* Desenhos das Topologias (CSS Art) */
+        .diagram { width: 100%; display: none; justify-content: center; align-items: center; animation: fadeIn 0.5s ease; }
+        .diagram.active { display: flex; }
+        .machine { background: var(--bg-color); border: 2px solid var(--text-muted); padding: 1rem; border-radius: 8px; z-index: 2; }
+        .machine i { font-size: 2rem; color: var(--text-muted); }
+        
+        /* Barramento */
+        .bus-layout { flex-direction: row; gap: 40px; position: relative; }
+        .bus-cable { position: absolute; top: 50%; left: 0; right: 0; height: 6px; background-color: var(--orange-safety); transform: translateY(-5%); z-index: 1; }
+        
+        /* Estrela */
+        .star-layout { flex-direction: column; gap: 20px; position: relative; }
+        .star-center { background: var(--blue-tech); border-color: var(--blue-tech); }
+        .star-center i { color: #fff; }
+        .star-nodes { display: flex; gap: 60px; margin-top: 30px; position: relative; }
+        /* Cabos da Estrela */
+        .star-cable { position: absolute; background-color: var(--blue-tech); z-index: 1; }
+        .cable-1 { width: 4px; height: 40px; top: -35px; left: 50%; transform: translateX(-50%); }
+        .cable-2 { width: 60px; height: 4px; top: -20px; left: 20%; transform: rotate(45deg); }
+        .cable-3 { width: 60px; height: 4px; top: -20px; right: 20%; transform: rotate(-45deg); }
+
+        /* Animações */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            .bus-layout { flex-direction: column; }
+            .bus-cable { width: 6px; height: 100%; left: 50%; top: 0; transform: translateX(-50%); }
+            .star-nodes { gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-industry"></i> Manual de Automação</h1>
+        <p>Guia Rápido de Identificação de Cabos e Layouts de Rede</p>
+    </header>
+
+    <div class="container">
+        
+        <h2 class="section-title"><i class="fa-solid fa-plug"></i> Quem é quem nos Meios Físicos? (Cabos)</h2>
+        <div class="cards-grid">
+            
+            <div class="card" onclick="toggleCard(this)">
+                <i class="fa-solid fa-network-wired"></i>
+                <h3>Par Trançado</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Clique para ver a função</p>
+                <div class="info-content">
+                    <strong>O que é:</strong> Cabo de rede comum (Ethernet/Profinet).<br><br>
+                    <strong>Para que serve:</strong> Usado para ligar o CLP (Controlador Lógico Programável) ao computador do supervisor ou IHM. É o padrão para comunicação direta e rápida em curtas distâncias.
+                </div>
+            </div>
+
+            <div class="card" onclick="toggleCard(this)">
+                <i class="fa-solid fa-bolt"></i>
+                <h3>Fibra Óptica</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Clique para ver a função</p>
+                <div class="info-content">
+                    <strong>O que é:</strong> O famoso "cabo de vidro".<br><br>
+                    <strong>Para que serve:</strong> Usado para levar dados a longas distâncias na fábrica sem sofrer com a interferência magnética dos motores elétricos pesados. Se tem ruído elétrico, use este!
+                </div>
+            </div>
+
+            <div class="card" onclick="toggleCard(this)">
+                <i class="fa-solid fa-wifi"></i>
+                <h3>Wireless</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Clique para ver a função</p>
+                <div class="info-content">
+                    <strong>O que é:</strong> Rede sem fio (Rádio/Wi-Fi Industrial).<br><br>
+                    <strong>Para que serve:</strong> Usado para monitorar sensores que ficam em locais móveis (como pontes rolantes, AGVs) ou de difícil acesso onde passar cabo é inviável.
+                </div>
+            </div>
+
+        </div>
+
+        <h2 class="section-title"><i class="fa-solid fa-sitemap"></i> Simulador de Topologia (Layout da Fábrica)</h2>
+        
+        <div class="topology-controls">
+            <button class="btn" id="btn-bus" onclick="showTopology('bus')"><i class="fa-solid fa-train"></i> Rede em Barramento</button>
+            <button class="btn" id="btn-star" onclick="showTopology('star')"><i class="fa-solid fa-asterisk"></i> Rede em Estrela</button>
+        </div>
+
+        <div class="simulation-area">
+            <div class="sim-text" id="sim-text">
+                Selecione um dos botões acima para entender como as máquinas devem ser ligadas umas nas outras.
+            </div>
+
+            <div class="diagram bus-layout" id="diag-bus">
+                <div class="bus-cable"></div>
+                <div class="machine" title="Máquina 1"><i class="fa-solid fa-robot"></i></div>
+                <div class="machine" title="Máquina 2"><i class="fa-solid fa-robot"></i></div>
+                <div class="machine" title="Máquina 3"><i class="fa-solid fa-robot"></i></div>
+            </div>
+
+            <div class="diagram star-layout" id="diag-star">
+                <div class="machine star-center" title="Switch Central"><i class="fa-solid fa-server"></i></div>
+                <div class="star-nodes">
+                    <div class="star-cable cable-1"></div>
+                    <div class="star-cable cable-2"></div>
+                    <div class="star-cable cable-3"></div>
+                    <div class="machine" title="Máquina 1"><i class="fa-solid fa-robot"></i></div>
+                    <div class="machine" title="Máquina 2"><i class="fa-solid fa-robot"></i></div>
+                    <div class="machine" title="Máquina 3"><i class="fa-solid fa-robot"></i></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Função para expandir/recolher os cards de cabos
+        function toggleCard(cardElement) {
+            // Remove a classe 'active' de todos os outros cards
+            const allCards = document.querySelectorAll('.card');
+            allCards.forEach(card => {
+                if (card !== cardElement) card.classList.remove('active');
+            });
+            // Alterna o estado do card clicado
+            cardElement.classList.toggle('active');
+        }
+
+        // Função para mostrar a topologia selecionada
+        function showTopology(type) {
+            // Resetar botões e diagramas
+            document.getElementById('btn-bus').classList.remove('active');
+            document.getElementById('btn-star').classList.remove('active');
+            document.getElementById('diag-bus').classList.remove('active');
+            document.getElementById('diag-star').classList.remove('active');
+
+            const textElement = document.getElementById('sim-text');
+
+            if (type === 'bus') {
+                document.getElementById('btn-bus').classList.add('active');
+                document.getElementById('diag-bus').classList.add('active');
+                textElement.innerHTML = "<strong>Rede em Barramento:</strong> As máquinas são ligadas uma na outra em linha (como vagões de trem). <br><span style='color: var(--orange-safety);'>Atenção:</span> Se o cabo partir no meio, a comunicação da metade da fábrica para a frente cai.";
+            } else if (type === 'star') {
+                document.getElementById('btn-star').classList.add('active');
+                document.getElementById('diag-star').classList.add('active');
+                textElement.innerHTML = "<strong>Rede em Estrela:</strong> Todas as máquinas ligam em um aparelho central (Switch). <br><span style='color: var(--green-ok);'>Vantagem:</span> Se uma máquina estragar ou o cabo dela partir, as outras continuam funcionando normalmente.";
+            }
+        }
+    </script>
+</body>
+</html>
